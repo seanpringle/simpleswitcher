@@ -901,10 +901,8 @@ void parse_key(char *combo, unsigned int *mod, KeySym *key)
 	*key = sym;
 }
 
-// bind a key combination on a root window, compensating for Lock* states
-void grab_key(unsigned int modmask, KeySym key)
+void grab_keycode(unsigned int modmask, KeyCode keycode)
 {
-	KeyCode keycode = XKeysymToKeycode(display, key);
 	XUngrabKey(display, keycode, AnyModifier, root);
 
 	if (modmask != AnyModifier)
@@ -923,6 +921,13 @@ void grab_key(unsigned int modmask, KeySym key)
 		// nice simple single key bind
 		XGrabKey(display, keycode, AnyModifier, root, True, GrabModeAsync, GrabModeAsync);
 	}
+}
+
+// bind a key combination on a root window, compensating for Lock* states
+void grab_key(unsigned int modmask, KeySym key)
+{
+	KeyCode keycode = XKeysymToKeycode(display, key);
+	grab_keycode(modmask, keycode);
 }
 
 int main(int argc, char *argv[])
