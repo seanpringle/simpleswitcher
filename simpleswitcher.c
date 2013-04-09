@@ -52,6 +52,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define NEAR(a,o,b) ((b) > (a)-(o) && (b) < (a)+(o))
 #define OVERLAP(a,b,c,d) (((a)==(c) && (b)==(d)) || MIN((a)+(b), (c)+(d)) - MAX((a), (c)) > 0)
 #define INTERSECT(x,y,w,h,x1,y1,w1,h1) (OVERLAP((x),(w),(x1),(w1)) && OVERLAP((y),(h),(y1),(h1)))
+#define ISMODKEY(kcs,m) (m == kcs[0] || m == kcs[1] || m == kcs[2] || m == kcs[3] \
+					  || m == kcs[4] || m == kcs[5] || m == kcs[6] || m == kcs[7])
 
 #define OPAQUE 0xffffffff
 #define OPACITY    "_NET_WM_WINDOW_OPACITY"
