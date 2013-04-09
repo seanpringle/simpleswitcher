@@ -541,8 +541,9 @@ client* window_client(Window win)
 #define ALLWINDOWS 1
 #define DESKTOPWINDOWS 2
 
-unsigned int all_windows_modmask; KeySym all_windows_keysym;
-unsigned int desktop_windows_modmask; KeySym desktop_windows_keysym;
+// X permits at most 8 modifier keys
+unsigned int all_windows_modmask; KeySym all_windows_keysym; KeyCode all_windows_modifiers[8];
+unsigned int desktop_windows_modmask; KeySym desktop_windows_keysym; KeyCode desktop_windows_modifiers[8];
 // flags to set if we switch modes on the fly
 int run_all_windows = 0, run_desktop_windows = 0, current_mode = 0;
 Window main_window = None;
@@ -1031,7 +1032,9 @@ int main(int argc, char *argv[])
 	parse_key(find_arg_str(ac, av, "-dkey", "F11"), &desktop_windows_modmask, &desktop_windows_keysym);
 
 	// bind key combos
+	grab_modifier(all_windows_modmask, all_windows_modifiers);
 	grab_key(all_windows_modmask, all_windows_keysym);
+	grab_modifier(desktop_windows_modmask, desktop_windows_modifiers);
 	grab_key(desktop_windows_modmask, desktop_windows_keysym);
 
 	XEvent ev;
