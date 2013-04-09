@@ -566,7 +566,7 @@ void menu_draw(textbox *text, textbox **boxes, int max_lines, int selected, char
 
 int menu(char **lines, char **input, char *prompt, int selected, Time *time)
 {
-	int line = -1, i, j, chosen = 0, aborted = 0;
+	int line = -1, i, j, chosen = 0, aborted = 0, ignorerelease = 0;
 	workarea mon; monitor_active(&mon);
 
 	int num_lines = 0; for (; lines[num_lines]; num_lines++);
@@ -668,6 +668,7 @@ int menu(char **lines, char **input, char *prompt, int selected, Time *time)
 			else
 			if (rc)
 			{
+				ignorerelease = 1;
 				// input changed
 				for (i = 0, j = 0; i < num_lines && j < max_lines; i++)
 				{
@@ -687,19 +688,28 @@ int menu(char **lines, char **input, char *prompt, int selected, Time *time)
 				// unhandled key
 				KeySym key = XkbKeycodeToKeysym(display, ev.xkey.keycode, 0, 0);
 
-				if (key == XK_Escape
-					// pressing one of the global key bindings closes the switcher. this allows fast closing of the menu if an item is not selected
-					|| ((all_windows_modmask == AnyModifier || ev.xkey.state & all_windows_modmask) && key == all_windows_keysym)
-					|| ((desktop_windows_modmask == AnyModifier || ev.xkey.state & desktop_windows_modmask) && key == desktop_windows_keysym))
+				if (key == XK_Escape && ! ignorerelease)
+					ignorerelease = 1;
+
+				else
+				if (key == XK_Escape)
 				{
 					aborted = 1;
+					break;
+				}
 
-					// pressing a global key binding that does not match the current mode switches modes on the fly. this allow fast flipping back and forth
-					if (current_mode == DESKTOPWINDOWS && (all_windows_modmask == AnyModifier || ev.xkey.state & all_windows_modmask) && key == all_windows_keysym)
-						run_all_windows = 1;
-					if (current_mode == ALLWINDOWS && (desktop_windows_modmask == AnyModifier || ev.xkey.state & desktop_windows_modmask) && key == desktop_windows_keysym)
-						run_desktop_windows = 1;
+				// pressing a global key binding that does not match the current mode switches modes on the fly. this allow fast flipping back and forth
+				else
+				if (current_mode == DESKTOPWINDOWS && (all_windows_modmask == AnyModifier || ev.xkey.state & all_windows_modmask) && key == all_windows_keysym)
+				{
+					run_all_windows = 1;
+					break;
+				}
 
+				else
+				if (current_mode == ALLWINDOWS && (desktop_windows_modmask == AnyModifier || ev.xkey.state & desktop_windows_modmask) && key == desktop_windows_keysym)
+				{
+					run_desktop_windows = 1;
 					break;
 				}
 
@@ -714,6 +724,18 @@ int menu(char **lines, char **input, char *prompt, int selected, Time *time)
 					selected = selected < filtered_lines-1 ? MIN(filtered_lines-1, selected+1): 0;
 			}
 			menu_draw(text, boxes, max_lines, selected, filtered);
+		}
+		else
+		if (ev.type == KeyRelease && ! ignorerelease
+				&& ( ISMODKEY(all_windows_modifiers, ev.xkey.keycode)
+				  || ISMODKEY(desktop_windows_modifiers, ev.xkey.keycode)
+				   )
+		   ) {
+			KeySym key = XkbKeycodeToKeysym(display, ev.xkey.keycode, 0, 0);
+			if ( key != all_windows_keysym && key != desktop_windows_keysym ) {
+				chosen = 1;
+				break;
+			}
 		}
 	}
 	release_keyboard();
