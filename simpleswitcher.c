@@ -930,6 +930,35 @@ void grab_key(unsigned int modmask, KeySym key)
 	grab_keycode(modmask, keycode);
 }
 
+void grab_modifier(unsigned int modmask, KeyCode * keycodes)
+{
+	int modidx = -1;
+
+	switch (modmask) {
+		case ShiftMask:   modidx = 0; break;
+		case LockMask:    modidx = 1; break;
+		case ControlMask: modidx = 2; break;
+		case Mod1Mask:    modidx = 3; break;
+		case Mod2Mask:    modidx = 4; break;
+		case Mod3Mask:    modidx = 5; break;
+		case Mod4Mask:    modidx = 6; break;
+		case Mod5Mask:    modidx = 7; break;
+		default: break;
+	};
+
+	if (modidx > -1) {
+		XModifierKeymap* modmapping = XGetModifierMapping(display);
+
+		int k = 0, offset = modidx * modmapping->max_keypermod;
+		for ( k = 0; k < modmapping->max_keypermod; ++k ) {
+			keycodes[k] = modmapping->modifiermap[offset+k];
+			grab_keycode(0, modmapping->modifiermap[offset+k]);
+		}
+
+		XFreeModifiermap(modmapping);
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	int i, j;
