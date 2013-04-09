@@ -832,7 +832,7 @@ void run_switcher(int mode, int fmode)
 			}
 			char *input = NULL;
 			Time time;
-			int n = menu(list, &input, "> ", 1, &time);
+			int n = menu(list, &input, "> ", 0, &time);
 			if (n >= 0 && list[n])
 			{
 				if (mode == ALLWINDOWS && isdigit(list[n][0]))
