@@ -54,6 +54,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define INTERSECT(x,y,w,h,x1,y1,w1,h1) (OVERLAP((x),(w),(x1),(w1)) && OVERLAP((y),(h),(y1),(h1)))
 #define ISMODKEY(kcs,m) (m == kcs[0] || m == kcs[1] || m == kcs[2] || m == kcs[3] \
 					  || m == kcs[4] || m == kcs[5] || m == kcs[6] || m == kcs[7])
+#define HASMODKEYS(kcs) ( kcs[0] != 0 || kcs[1] != 0 || kcs[2] != 0 || kcs[3] != 0 \
+					   || kcs[4] != 0 || kcs[5] != 0 || kcs[6] != 0 || kcs[7] != 0 )
 
 #define OPAQUE 0xffffffff
 #define OPACITY    "_NET_WM_WINDOW_OPACITY"
@@ -688,28 +690,29 @@ int menu(char **lines, char **input, char *prompt, int selected, Time *time)
 				// unhandled key
 				KeySym key = XkbKeycodeToKeysym(display, ev.xkey.keycode, 0, 0);
 
-				if (key == XK_Escape && ! ignorerelease)
+
+				if (key == XK_Escape && ! ignorerelease
+						&& (HASMODKEYS(all_windows_modifiers)
+							|| HASMODKEYS(desktop_windows_modifiers)))
 					ignorerelease = 1;
 
 				else
-				if (key == XK_Escape)
+				if (key == XK_Escape
+					// pressing one of the global key bindings closes the switcher. this allows fast closing of the menu if an item is not selected
+					|| ((all_windows_modmask == AnyModifier || ev.xkey.state & all_windows_modmask) && key == all_windows_keysym
+						&& ! HASMODKEYS(all_windows_modifiers))
+					|| ((desktop_windows_modmask == AnyModifier || ev.xkey.state & desktop_windows_modmask) && key == desktop_windows_keysym
+						&& ! HASMODKEYS(desktop_windows_modifiers)))
 				{
 					aborted = 1;
-					break;
-				}
+					ignorerelease = 1;
 
-				// pressing a global key binding that does not match the current mode switches modes on the fly. this allow fast flipping back and forth
-				else
-				if (current_mode == DESKTOPWINDOWS && (all_windows_modmask == AnyModifier || ev.xkey.state & all_windows_modmask) && key == all_windows_keysym)
-				{
-					run_all_windows = 1;
-					break;
-				}
+					// pressing a global key binding that does not match the current mode switches modes on the fly. this allow fast flipping back and forth
+					if (current_mode == DESKTOPWINDOWS && (all_windows_modmask == AnyModifier || ev.xkey.state & all_windows_modmask) && key == all_windows_keysym)
+						run_all_windows = 1;
+					if (current_mode == ALLWINDOWS && (desktop_windows_modmask == AnyModifier || ev.xkey.state & desktop_windows_modmask) && key == desktop_windows_keysym)
+						run_desktop_windows = 1;
 
-				else
-				if (current_mode == ALLWINDOWS && (desktop_windows_modmask == AnyModifier || ev.xkey.state & desktop_windows_modmask) && key == desktop_windows_keysym)
-				{
-					run_desktop_windows = 1;
 					break;
 				}
 
@@ -958,6 +961,8 @@ void grab_key(unsigned int modmask, KeySym key)
 void grab_modifier(unsigned int modmask, KeyCode * keycodes)
 {
 	int modidx = -1;
+
+	memset ( keycodes, 0, 8 );
 
 	switch (modmask) {
 		case ShiftMask:   modidx = 0; break;
