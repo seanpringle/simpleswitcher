@@ -295,9 +295,10 @@ typedef struct {
 #define MENURETURN 1
 #define MENUMODUP 2
 #define MENUBC "black"
+#define MENUSTARTIDX 1
 
 char *config_menu_font, *config_menu_fg, *config_menu_bg, *config_menu_hlfg, *config_menu_hlbg, *config_menu_bgalt, *config_menu_bc;
-unsigned int config_menu_width, config_menu_lines, config_focus_mode, config_raise_mode, config_window_placement, config_menu_bw, config_window_opacity;
+unsigned int config_menu_width, config_menu_lines, config_focus_mode, config_raise_mode, config_window_placement, config_menu_bw, config_window_opacity, config_menu_idx;
 
 // allocate a pixel value for an X named color
 unsigned int color_get(const char *name)
@@ -832,7 +833,7 @@ void run_switcher(int mode, int fmode)
 			}
 			char *input = NULL;
 			Time time;
-			int n = menu(list, &input, "> ", 1, &time);
+			int n = menu(list, &input, "> ", config_menu_idx, &time);
 			if (n >= 0 && list[n])
 			{
 				if (mode == ALLWINDOWS && isdigit(list[n][0]))
@@ -972,6 +973,7 @@ int main(int argc, char *argv[])
 	config_menu_hlfg  = find_arg_str(ac, av, "-hlfg", MENUHLFG);
 	config_menu_hlbg  = find_arg_str(ac, av, "-hlbg", MENUHLBG);
 	config_menu_bc    = find_arg_str(ac, av, "-bc", MENUBC);
+	config_menu_idx   = find_arg_int(ac, av, "-index", MENUSTARTIDX);
 	config_menu_bw    = find_arg_int(ac, av, "-bw", 1);
 	config_window_opacity = find_arg_int(ac, av, "-o", 100);
 
