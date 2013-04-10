@@ -569,7 +569,7 @@ void menu_draw(textbox *text, textbox **boxes, int max_lines, int selected, char
 
 int menu(char **lines, char **input, char *prompt, int selected, Time *time)
 {
-	int line = -1, i, j, chosen = 0, aborted = 0, ignorerelease = 0;
+	int line = -1, i, j, chosen = 0, aborted = 0, ignorerelease = ! config_menu_mod;
 	workarea mon; monitor_active(&mon);
 
 	int num_lines = 0; for (; lines[num_lines]; num_lines++);
