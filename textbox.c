@@ -1,3 +1,4 @@
+/* vim: set noexpandtab tabstop=8 softtabstop=0 shiftwidth=8: */
 /*
 
 MIT/X11 License
