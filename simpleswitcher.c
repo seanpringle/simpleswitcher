@@ -52,6 +52,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define NEAR(a,o,b) ((b) > (a)-(o) && (b) < (a)+(o))
 #define OVERLAP(a,b,c,d) (((a)==(c) && (b)==(d)) || MIN((a)+(b), (c)+(d)) - MAX((a), (c)) > 0)
 #define INTERSECT(x,y,w,h,x1,y1,w1,h1) (OVERLAP((x),(w),(x1),(w1)) && OVERLAP((y),(h),(y1),(h1)))
+#define ISMODKEY(kcs,m) (m == kcs[0] || m == kcs[1] || m == kcs[2] || m == kcs[3] \
+					  || m == kcs[4] || m == kcs[5] || m == kcs[6] || m == kcs[7])
+#define HASMODKEYS(kcs) ( kcs[0] != 0 || kcs[1] != 0 || kcs[2] != 0 || kcs[3] != 0 \
+					   || kcs[4] != 0 || kcs[5] != 0 || kcs[6] != 0 || kcs[7] != 0 )
 
 #define OPAQUE 0xffffffff
 #define OPACITY    "_NET_WM_WINDOW_OPACITY"
@@ -295,9 +299,10 @@ typedef struct {
 #define MENURETURN 1
 #define MENUMODUP 2
 #define MENUBC "black"
+#define MENURELEASE 0
 
 char *config_menu_font, *config_menu_fg, *config_menu_bg, *config_menu_hlfg, *config_menu_hlbg, *config_menu_bgalt, *config_menu_bc;
-unsigned int config_menu_width, config_menu_lines, config_focus_mode, config_raise_mode, config_window_placement, config_menu_bw, config_window_opacity;
+unsigned int config_menu_width, config_menu_lines, config_focus_mode, config_raise_mode, config_window_placement, config_menu_bw, config_window_opacity, config_menu_mod;
 
 // allocate a pixel value for an X named color
 unsigned int color_get(const char *name)
@@ -539,8 +544,9 @@ client* window_client(Window win)
 #define ALLWINDOWS 1
 #define DESKTOPWINDOWS 2
 
-unsigned int all_windows_modmask; KeySym all_windows_keysym;
-unsigned int desktop_windows_modmask; KeySym desktop_windows_keysym;
+// X permits at most 8 modifier keys
+unsigned int all_windows_modmask; KeySym all_windows_keysym; KeyCode all_windows_modifiers[8];
+unsigned int desktop_windows_modmask; KeySym desktop_windows_keysym; KeyCode desktop_windows_modifiers[8];
 // flags to set if we switch modes on the fly
 int run_all_windows = 0, run_desktop_windows = 0, current_mode = 0;
 Window main_window = None;
@@ -563,7 +569,7 @@ void menu_draw(textbox *text, textbox **boxes, int max_lines, int selected, char
 
 int menu(char **lines, char **input, char *prompt, int selected, Time *time)
 {
-	int line = -1, i, j, chosen = 0, aborted = 0;
+	int line = -1, i, j, chosen = 0, aborted = 0, ignorerelease = ! config_menu_mod;
 	workarea mon; monitor_active(&mon);
 
 	int num_lines = 0; for (; lines[num_lines]; num_lines++);
@@ -665,6 +671,7 @@ int menu(char **lines, char **input, char *prompt, int selected, Time *time)
 			else
 			if (rc)
 			{
+				ignorerelease = 1;
 				// input changed
 				for (i = 0, j = 0; i < num_lines && j < max_lines; i++)
 				{
@@ -684,12 +691,22 @@ int menu(char **lines, char **input, char *prompt, int selected, Time *time)
 				// unhandled key
 				KeySym key = XkbKeycodeToKeysym(display, ev.xkey.keycode, 0, 0);
 
+
+				if (key == XK_Escape && ! ignorerelease
+						&& (HASMODKEYS(all_windows_modifiers)
+							|| HASMODKEYS(desktop_windows_modifiers)))
+					ignorerelease = 1;
+
+				else
 				if (key == XK_Escape
 					// pressing one of the global key bindings closes the switcher. this allows fast closing of the menu if an item is not selected
-					|| ((all_windows_modmask == AnyModifier || ev.xkey.state & all_windows_modmask) && key == all_windows_keysym)
-					|| ((desktop_windows_modmask == AnyModifier || ev.xkey.state & desktop_windows_modmask) && key == desktop_windows_keysym))
+					|| ((all_windows_modmask == AnyModifier || ev.xkey.state & all_windows_modmask) && key == all_windows_keysym
+						&& ! HASMODKEYS(all_windows_modifiers))
+					|| ((desktop_windows_modmask == AnyModifier || ev.xkey.state & desktop_windows_modmask) && key == desktop_windows_keysym
+						&& ! HASMODKEYS(desktop_windows_modifiers)))
 				{
 					aborted = 1;
+					ignorerelease = 1;
 
 					// pressing a global key binding that does not match the current mode switches modes on the fly. this allow fast flipping back and forth
 					if (current_mode == DESKTOPWINDOWS && (all_windows_modmask == AnyModifier || ev.xkey.state & all_windows_modmask) && key == all_windows_keysym)
@@ -711,6 +728,18 @@ int menu(char **lines, char **input, char *prompt, int selected, Time *time)
 					selected = selected < filtered_lines-1 ? MIN(filtered_lines-1, selected+1): 0;
 			}
 			menu_draw(text, boxes, max_lines, selected, filtered);
+		}
+		else
+		if (ev.type == KeyRelease && ! ignorerelease
+				&& ( ISMODKEY(all_windows_modifiers, ev.xkey.keycode)
+				  || ISMODKEY(desktop_windows_modifiers, ev.xkey.keycode)
+				   )
+		   ) {
+			KeySym key = XkbKeycodeToKeysym(display, ev.xkey.keycode, 0, 0);
+			if ( key != all_windows_keysym && key != desktop_windows_keysym ) {
+				chosen = 1;
+				break;
+			}
 		}
 	}
 	release_keyboard();
@@ -901,10 +930,8 @@ void parse_key(char *combo, unsigned int *mod, KeySym *key)
 	*key = sym;
 }
 
-// bind a key combination on a root window, compensating for Lock* states
-void grab_key(unsigned int modmask, KeySym key)
+void grab_keycode(unsigned int modmask, KeyCode keycode)
 {
-	KeyCode keycode = XKeysymToKeycode(display, key);
 	XUngrabKey(display, keycode, AnyModifier, root);
 
 	if (modmask != AnyModifier)
@@ -922,6 +949,44 @@ void grab_key(unsigned int modmask, KeySym key)
 	{
 		// nice simple single key bind
 		XGrabKey(display, keycode, AnyModifier, root, True, GrabModeAsync, GrabModeAsync);
+	}
+}
+
+// bind a key combination on a root window, compensating for Lock* states
+void grab_key(unsigned int modmask, KeySym key)
+{
+	KeyCode keycode = XKeysymToKeycode(display, key);
+	grab_keycode(modmask, keycode);
+}
+
+void grab_modifier(unsigned int modmask, KeyCode * keycodes)
+{
+	int modidx = -1;
+
+	memset ( keycodes, 0, 8 );
+
+	switch (modmask) {
+		case ShiftMask:   modidx = 0; break;
+		case LockMask:    modidx = 1; break;
+		case ControlMask: modidx = 2; break;
+		case Mod1Mask:    modidx = 3; break;
+		case Mod2Mask:    modidx = 4; break;
+		case Mod3Mask:    modidx = 5; break;
+		case Mod4Mask:    modidx = 6; break;
+		case Mod5Mask:    modidx = 7; break;
+		default: break;
+	};
+
+	if (modidx > -1) {
+		XModifierKeymap* modmapping = XGetModifierMapping(display);
+
+		int k = 0, offset = modidx * modmapping->max_keypermod;
+		for ( k = 0; k < modmapping->max_keypermod; ++k ) {
+			keycodes[k] = modmapping->modifiermap[offset+k];
+			grab_keycode(0, modmapping->modifiermap[offset+k]);
+		}
+
+		XFreeModifiermap(modmapping);
 	}
 }
 
@@ -972,6 +1037,7 @@ int main(int argc, char *argv[])
 	config_menu_hlfg  = find_arg_str(ac, av, "-hlfg", MENUHLFG);
 	config_menu_hlbg  = find_arg_str(ac, av, "-hlbg", MENUHLBG);
 	config_menu_bc    = find_arg_str(ac, av, "-bc", MENUBC);
+	config_menu_mod   = find_arg_int(ac, av, "-release", MENURELEASE);
 	config_menu_bw    = find_arg_int(ac, av, "-bw", 1);
 	config_window_opacity = find_arg_int(ac, av, "-o", 100);
 
@@ -995,7 +1061,9 @@ int main(int argc, char *argv[])
 	parse_key(find_arg_str(ac, av, "-dkey", "F11"), &desktop_windows_modmask, &desktop_windows_keysym);
 
 	// bind key combos
+	grab_modifier(all_windows_modmask, all_windows_modifiers);
 	grab_key(all_windows_modmask, all_windows_keysym);
+	grab_modifier(desktop_windows_modmask, desktop_windows_modifiers);
 	grab_key(desktop_windows_modmask, desktop_windows_keysym);
 
 	XEvent ev;

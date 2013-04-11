@@ -136,6 +136,24 @@ Set the width of the menu as a percentage of the screen width (default: 60).
 .RS
 simpleswitcher -width 60
 .RE
+.TP
+.B -release
+Enable or disable the action on modifier release feature
+.br
+(0 or 1, default: 0).
+.br
+
+If this feature is enabled, simpleswitcher behaves like this:
+
+Pressing modifier + key will pop up simpleswitcher, holding down modifier and repeatedly pressing key will cycle through the list. Upon release of modifier the selected entry will be focused.
+
+Hitting Escape once turns of the release action. Now entries can be filtered by typing, programs can be started or entries can be cycled through again.  Hitting Escape a second time aborts simpleswitcher without any action.
+
+Works only when a modifier key is specified, e.g. mod1+Tab, otherwise simpleswitcher behaves as if the feature is disabled.
+
+.RS
+simpleswitcher -release 0
+.RE
 .SH SEE ALSO
 .BR simpleswitcher (1)
 .SH AUTHOR
