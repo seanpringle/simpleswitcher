@@ -34,6 +34,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <X11/keysym.h>
 #include <X11/XKBlib.h>
 #include <X11/Xft/Xft.h>
+#include <X11/Xresource.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1068,6 +1069,34 @@ int main(int argc, char *argv[])
 	// X atom values
 	for (i = 0; i < NETATOMS; i++) netatoms[i] = XInternAtom(display, netatom_names[i], False);
 
+	XrmInitialize();
+	char * xRMS = XResourceManagerString ( display );
+	XrmDatabase xDB = XrmGetStringDatabase ( xRMS );
+
+	char * xrmType;
+	XrmValue xrmValue;
+
+	const char * namePrefix = "simpleswitcher";
+	const char * classPrefix = "Simpleswitcher";
+
+	for ( i = 0; i < sizeof ( xrmOptions ) / sizeof ( *xrmOptions ); ++i ) {
+		char * name = (char *) malloc ( ( 1 + strlen ( namePrefix ) + strlen ( xrmOptions[i].name ) ) * sizeof ( char ) );
+		char * class = (char *) malloc ( ( 1 + strlen ( classPrefix ) + strlen ( xrmOptions[i].name ) ) * sizeof ( char ) );
+		sprintf ( name, "%s.%s", namePrefix, xrmOptions[i].name );
+		sprintf ( class, "%s.%s", classPrefix, xrmOptions[i].name );
+
+		if ( XrmGetResource ( xDB, name, class, &xrmType, &xrmValue ) ) {
+
+			if ( xrmOptions[i].type == xrm_String ) {
+				*xrmOptions[i].str = (char *) malloc ( xrmValue.size * sizeof ( char ) );
+				strncpy ( *xrmOptions[i].str, xrmValue.addr, xrmValue.size );
+			} else if ( xrmOptions[i].type == xrm_Number ) {
+				*xrmOptions[i].num = strtol ( xrmValue.addr, NULL, 10 );
+			}
+		}
+
+		free ( name ); free ( class );
+	}
 
 	find_arg_str(ac, av, "-key",     &config_menu_key       );
 	find_arg_str(ac, av, "-dkey",    &config_menu_dkey      );
