@@ -316,6 +316,34 @@ unsigned int
 	, config_menu_idx = 1
 	;
 
+#define xrm_String 0
+#define xrm_Number 1
+
+typedef struct
+	{ int type
+	; char * name
+	; union { unsigned int * num; char ** str; }
+	;
+	} XrmOption;
+
+XrmOption xrmOptions[] =
+	{ { xrm_String, "key",         { .str = &config_menu_key       } }
+	, { xrm_String, "dkey",        { .str = &config_menu_dkey      } }
+	, { xrm_Number, "width",       { .num = &config_menu_width     } }
+	, { xrm_Number, "lines",       { .num = &config_menu_lines     } }
+	, { xrm_String, "font",        { .str = &config_menu_font      } }
+	, { xrm_String, "foreground",  { .str = &config_menu_fg        } }
+	, { xrm_String, "background",  { .str = &config_menu_bg        } }
+	, { xrm_String, "alternatebg", { .str = &config_menu_bgalt     } }
+	, { xrm_String, "highlightfg", { .str = &config_menu_hlfg      } }
+	, { xrm_String, "highlightbg", { .str = &config_menu_hlbg      } }
+	, { xrm_String, "bordercolor", { .str = &config_menu_bc        } }
+	, { xrm_Number, "release",     { .num = &config_menu_mod       } }
+	, { xrm_Number, "startindex",  { .num = &config_menu_idx       } }
+	, { xrm_Number, "borderwidth", { .num = &config_menu_bw        } }
+	, { xrm_Number, "opacity",     { .num = &config_window_opacity } }
+	};
+
 // allocate a pixel value for an X named color
 unsigned int color_get(const char *name)
 {
