@@ -1,5 +1,5 @@
 CFLAGS?=-Wall -Os
-LDADD?=`pkg-config --cflags --libs x11 xinerama xft`
+LDADD?=`pkg-config --cflags --libs x11 xinerama xft xres`
 PREFIX?=$(DESTDIR)/usr
 BINDIR?=$(PREFIX)/bin
 

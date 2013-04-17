@@ -30,7 +30,11 @@ is an X11 popup window switcher. A list is displayed center-screen showing open 
 .P
 License: MIT/X11
 .SH USAGE
-See options below for custom key combinations. These are the defaults.
+See options below for custom key combinations. These are the defaults. In addition to the command line switches X resources can be used for configuration. The instance name is
+.B simpleswitcher
+and the class name is
+.B Simpleswitcher
+.
 .TP
 .B F12
 Show all windows on all desktops.
@@ -38,8 +42,9 @@ Show all windows on all desktops.
 .B F11
 Show windows from the current desktop.
 .SH OPTIONS
+The first option is the command line switch, the resource name follows in parenthesis.
 .TP
-.B -key
+.B -key (key)
 Change the key combination to display all windows (default: F12).
 .P
 .RS
@@ -50,7 +55,7 @@ simpleswitcher -key control+shift+s
 simpleswitcher -key mod1+Tab
 .RE
 .TP
-.B -dkey
+.B -dkey (dkey)
 Change the key combination to display window on the current desktop (default: F11).
 .P
 .RS
@@ -67,77 +72,77 @@ Run simpleswitcher in all-windows mode once then exit. Does not bind any keys.
 .B -dnow
 Run simpleswitcher in current-desktop-windows mode once then exit. Does not bind any keys.
 .TP
-.B -bg
+.B -bg (background)
 Set the background text color (X11 named color or hex #rrggbb) for the menu (default: #222222).
 .P
 .RS
 simpleswitcher -fg "#222222"
 .RE
 .TP
-.B -bc
+.B -bc (bordercolor)
 Set the border color (X11 named color or hex #rrggbb) for the menu (default: #000000).
 .P
 .RS
 simpleswitcher -bc black
 .RE
 .TP
-.B -bw
+.B -bw (borderwidth)
 Set the border width in pixels (default: 1).
 .P
 .RS
 simpleswitcher -bw 1
 .RE
 .TP
-.B -fg
+.B -fg (foreground)
 Set the foreground text color (X11 named color or hex #rrggbb) for the menu (default: #cccccc).
 .P
 .RS
 simpleswitcher -fg "#cccccc"
 .RE
 .TP
-.B -font
+.B -font (font)
 Xft font name for use by the menu (default: mono-14).
 .P
 .RS
 simpleswitcher -font monospace-14:medium
 .RE
 .TP
-.B -hlbg
+.B -hlbg (highlightbg)
 Set the background text color (X11 named color or hex #rrggbb) for the highlighted item in the menu (default: #005577).
 .P
 .RS
 simpleswitcher -fg "#005577"
 .RE
 .TP
-.B -hlfg
+.B -hlfg (highlightfg)
 Set the foreground text color (X11 named color or hex #rrggbb) for the highlighted item in the menu (default: #ffffff).
 .P
 .RS
 simpleswitcher -fg "#ffffff"
 .RE
 .TP
-.B -o
+.B -o (opacity)
 Set the window opacity (0-100).
 .P
 .RS
 simpleswitcher -o "75"
 .RE
 .TP
-.B -lines
+.B -lines (lines)
 Maximum number of entries the menu may show before scrolling (default: 25).
 .P
 .RS
 simpleswitcher -lines 25
 .RE
 .TP
-.B -width
+.B -width (width)
 Set the width of the menu as a percentage of the screen width (default: 60).
 .P
 .RS
 simpleswitcher -width 60
 .RE
 .TP
-.B -release
+.B -release (release)
 Enable or disable the action on modifier release feature
 .br
 (0 or 1, default: 0).
@@ -155,13 +160,14 @@ Works only when a modifier key is specified, e.g. mod1+Tab, otherwise simpleswit
 simpleswitcher -release 0
 .RE
 .TP
-.B -index
+.B -index (startindex)
 First item in list to be selected when simpleswitcher is called (default: 1).
 .P
 .RS
 simpleswitcher -index 1
 .RE
 .SH SEE ALSO
-.BR simpleswitcher (1)
+.BR simpleswitcher (1),
+.BR xrdb (1)
 .SH AUTHOR
 Sean Pringle <sean.pringle@gmail.com>
