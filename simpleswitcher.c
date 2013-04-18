@@ -34,6 +34,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <X11/keysym.h>
 #include <X11/XKBlib.h>
 #include <X11/Xft/Xft.h>
+#include <X11/Xresource.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -120,15 +121,19 @@ int find_arg(int argc, char *argv[], char *key)
 	int i; for (i = 0; i < argc && strcasecmp(argv[i], key); i++);
 	return i < argc ? i: -1;
 }
-char* find_arg_str(int argc, char *argv[], char *key, char* def)
+void find_arg_str(int argc, char *argv[], char *key, char ** arg)
 {
 	int i = find_arg(argc, argv, key);
-	return (i > 0 && i < argc-1) ? argv[i+1]: def;
+	if ( i > 0 && i < argc - 1 ) {
+		*arg = argv[i + 1];
+	}
 }
-int find_arg_int(int argc, char *argv[], char *key, int def)
+void find_arg_int(int argc, char *argv[], char *key, unsigned int * arg)
 {
 	int i = find_arg(argc, argv, key);
-	return (i > 0 && i < argc-1) ? strtol(argv[i+1], NULL, 10): def;
+	if (i > 0 && i < argc-1) {
+		*arg = strtol(argv[i+1], NULL, 10);
+	}
 }
 
 unsigned int NumlockMask = 0;
@@ -288,23 +293,57 @@ typedef struct {
 	workarea monitor;
 } client;
 
-#define MENUXFTFONT "mono-14"
-#define MENUWIDTH 50
-#define MENULINES 25
-#define MENUFG "#222222"
-#define MENUBG "#f2f1f0"
-#define MENUBGALT "#e9e8e7"
-#define MENUHLFG "#ffffff"
-#define MENUHLBG "#005577"
-#define MENURETURN 1
-#define MENUMODUP 2
-#define MENUBC "black"
-#define MENURELEASE 0
-#define MENUSTARTIDX 1
+char
+	  *config_menu_key = "F12"
+	, *config_menu_dkey = "F11"
+	, *config_menu_font = "mono-14"
+	, *config_menu_fg = "#222222"
+	, *config_menu_bg = "#f2f1f0"
+	, *config_menu_hlfg = "#ffffff"
+	, *config_menu_hlbg = "#005577"
+	, *config_menu_bgalt = "#e9e8e7"
+	, *config_menu_bc = "black"
+	;
 
-char *config_menu_font, *config_menu_fg, *config_menu_bg, *config_menu_hlfg, *config_menu_hlbg, *config_menu_bgalt, *config_menu_bc;
-unsigned int config_menu_width, config_menu_lines, config_focus_mode, config_raise_mode, config_window_placement, config_menu_bw,
-	config_window_opacity, config_menu_mod, config_menu_idx;
+unsigned int
+	  config_menu_width = 50
+	, config_menu_lines = 25
+	, config_focus_mode
+	, config_raise_mode
+	, config_window_placement
+	, config_menu_bw = 1
+	, config_window_opacity = 100
+	, config_menu_mod = 0
+	, config_menu_idx = 1
+	;
+
+#define xrm_String 0
+#define xrm_Number 1
+
+typedef struct
+	{ int type
+	; char * name
+	; union { unsigned int * num; char ** str; }
+	;
+	} XrmOption;
+
+XrmOption xrmOptions[] =
+	{ { xrm_String, "key",         { .str = &config_menu_key       } }
+	, { xrm_String, "dkey",        { .str = &config_menu_dkey      } }
+	, { xrm_Number, "width",       { .num = &config_menu_width     } }
+	, { xrm_Number, "lines",       { .num = &config_menu_lines     } }
+	, { xrm_String, "font",        { .str = &config_menu_font      } }
+	, { xrm_String, "foreground",  { .str = &config_menu_fg        } }
+	, { xrm_String, "background",  { .str = &config_menu_bg        } }
+	, { xrm_String, "alternatebg", { .str = &config_menu_bgalt     } }
+	, { xrm_String, "highlightfg", { .str = &config_menu_hlfg      } }
+	, { xrm_String, "highlightbg", { .str = &config_menu_hlbg      } }
+	, { xrm_String, "bordercolor", { .str = &config_menu_bc        } }
+	, { xrm_Number, "release",     { .num = &config_menu_mod       } }
+	, { xrm_Number, "startindex",  { .num = &config_menu_idx       } }
+	, { xrm_Number, "borderwidth", { .num = &config_menu_bw        } }
+	, { xrm_Number, "opacity",     { .num = &config_window_opacity } }
+	};
 
 // allocate a pixel value for an X named color
 unsigned int color_get(const char *name)
@@ -1030,19 +1069,55 @@ int main(int argc, char *argv[])
 	// X atom values
 	for (i = 0; i < NETATOMS; i++) netatoms[i] = XInternAtom(display, netatom_names[i], False);
 
-	config_menu_width = find_arg_int(ac, av, "-width", MENUWIDTH);
-	config_menu_lines = find_arg_int(ac, av, "-lines", MENULINES);
-	config_menu_font  = find_arg_str(ac, av, "-font", MENUXFTFONT);
-	config_menu_fg    = find_arg_str(ac, av, "-fg", MENUFG);
-	config_menu_bg    = find_arg_str(ac, av, "-bg", MENUBG);
-	config_menu_bgalt = find_arg_str(ac, av, "-bgalt", MENUBGALT);
-	config_menu_hlfg  = find_arg_str(ac, av, "-hlfg", MENUHLFG);
-	config_menu_hlbg  = find_arg_str(ac, av, "-hlbg", MENUHLBG);
-	config_menu_bc    = find_arg_str(ac, av, "-bc", MENUBC);
-	config_menu_mod   = find_arg_int(ac, av, "-release", MENURELEASE);
-	config_menu_idx   = find_arg_int(ac, av, "-index", MENUSTARTIDX);
-	config_menu_bw    = find_arg_int(ac, av, "-bw", 1);
-	config_window_opacity = find_arg_int(ac, av, "-o", 100);
+	XrmInitialize();
+	char * xRMS = XResourceManagerString ( display );
+	
+	if ( xRMS != NULL ) {
+		XrmDatabase xDB = XrmGetStringDatabase ( xRMS );
+
+		char * xrmType;
+		XrmValue xrmValue;
+
+		const char * namePrefix = "simpleswitcher";
+		const char * classPrefix = "Simpleswitcher";
+
+		for ( i = 0; i < sizeof ( xrmOptions ) / sizeof ( *xrmOptions ); ++i ) {
+			char * name = (char *) malloc ( ( 1 + strlen ( namePrefix ) + strlen ( xrmOptions[i].name ) ) * sizeof ( char ) );
+			char * class = (char *) malloc ( ( 1 + strlen ( classPrefix ) + strlen ( xrmOptions[i].name ) ) * sizeof ( char ) );
+			sprintf ( name, "%s.%s", namePrefix, xrmOptions[i].name );
+			sprintf ( class, "%s.%s", classPrefix, xrmOptions[i].name );
+
+			if ( XrmGetResource ( xDB, name, class, &xrmType, &xrmValue ) ) {
+
+				if ( xrmOptions[i].type == xrm_String ) {
+					*xrmOptions[i].str = (char *) malloc ( xrmValue.size * sizeof ( char ) );
+					strncpy ( *xrmOptions[i].str, xrmValue.addr, xrmValue.size );
+				} else if ( xrmOptions[i].type == xrm_Number ) {
+					*xrmOptions[i].num = strtol ( xrmValue.addr, NULL, 10 );
+				}
+			}
+
+			free ( name ); free ( class );
+		}
+
+		XFree ( xRMS );
+	}
+
+	find_arg_str(ac, av, "-key",     &config_menu_key       );
+	find_arg_str(ac, av, "-dkey",    &config_menu_dkey      );
+	find_arg_int(ac, av, "-width",   &config_menu_width     );
+	find_arg_int(ac, av, "-lines",   &config_menu_lines     );
+	find_arg_str(ac, av, "-font",    &config_menu_font      );
+	find_arg_str(ac, av, "-fg",      &config_menu_fg        );
+	find_arg_str(ac, av, "-bg",      &config_menu_bg        );
+	find_arg_str(ac, av, "-bgalt",   &config_menu_bgalt     );
+	find_arg_str(ac, av, "-hlfg",    &config_menu_hlfg      );
+	find_arg_str(ac, av, "-hlbg",    &config_menu_hlbg      );
+	find_arg_str(ac, av, "-bc",      &config_menu_bc        );
+	find_arg_int(ac, av, "-release", &config_menu_mod       );
+	find_arg_int(ac, av, "-index",   &config_menu_idx       );
+	find_arg_int(ac, av, "-bw",      &config_menu_bw        );
+	find_arg_int(ac, av, "-o",       &config_window_opacity );
 
 	// flags to run immediately and exit
 	if (find_arg(ac, av, "-now") >= 0)
@@ -1058,10 +1133,10 @@ int main(int argc, char *argv[])
 	// in background mode from here on
 
 	// key combination to display all windows from all desktops
-	parse_key(find_arg_str(ac, av, "-key", "F12"), &all_windows_modmask, &all_windows_keysym);
+	parse_key(config_menu_key, &all_windows_modmask, &all_windows_keysym);
 
 	// key combination to display only window on the current desktop
-	parse_key(find_arg_str(ac, av, "-dkey", "F11"), &desktop_windows_modmask, &desktop_windows_keysym);
+	parse_key(config_menu_dkey, &desktop_windows_modmask, &desktop_windows_keysym);
 
 	// bind key combos
 	grab_modifier(all_windows_modmask, all_windows_modifiers);
