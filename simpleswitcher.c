@@ -1025,7 +1025,7 @@ void grab_modifier(unsigned int modmask, KeyCode * keycodes)
 		int k = 0, offset = modidx * modmapping->max_keypermod;
 		for ( k = 0; k < modmapping->max_keypermod; ++k ) {
 			keycodes[k] = modmapping->modifiermap[offset+k];
-			grab_keycode(0, modmapping->modifiermap[offset+k]);
+			grab_keycode(AnyModifier, modmapping->modifiermap[offset+k]);
 		}
 
 		XFreeModifiermap(modmapping);
