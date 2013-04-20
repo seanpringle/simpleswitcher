@@ -1141,8 +1141,9 @@ int main(int argc, char *argv[])
 
 	// bind key combos
 	grab_modifier(all_windows_modmask, all_windows_modifiers);
+	if ( desktop_windows_modmask != all_windows_modmask )
+			grab_modifier(desktop_windows_modmask, desktop_windows_modifiers);
 	grab_key(all_windows_modmask, all_windows_keysym);
-	grab_modifier(desktop_windows_modmask, desktop_windows_modifiers);
 	grab_key(desktop_windows_modmask, desktop_windows_keysym);
 
 	XEvent ev;
