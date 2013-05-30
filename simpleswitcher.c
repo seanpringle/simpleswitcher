@@ -1083,8 +1083,8 @@ int main(int argc, char *argv[])
 		const char * classPrefix = "Simpleswitcher";
 
 		for ( i = 0; i < sizeof ( xrmOptions ) / sizeof ( *xrmOptions ); ++i ) {
-			char * name = (char *) malloc ( ( 1 + strlen ( namePrefix ) + strlen ( xrmOptions[i].name ) ) * sizeof ( char ) );
-			char * class = (char *) malloc ( ( 1 + strlen ( classPrefix ) + strlen ( xrmOptions[i].name ) ) * sizeof ( char ) );
+			char * name = (char *) malloc ( ( strlen ( namePrefix ) + 1 + strlen ( xrmOptions[i].name ) ) * sizeof ( char ) + 1);
+			char * class = (char *) malloc ( ( strlen ( classPrefix ) + 1 + strlen ( xrmOptions[i].name ) ) * sizeof ( char ) + 1 );
 			sprintf ( name, "%s.%s", namePrefix, xrmOptions[i].name );
 			sprintf ( class, "%s.%s", classPrefix, xrmOptions[i].name );
 
