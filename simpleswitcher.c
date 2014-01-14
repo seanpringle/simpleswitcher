@@ -631,7 +631,7 @@ int menu(char **lines, char **input, char *prompt, int selected, Time *time)
 	}
 	else
 	{
-		box = XCreateSimpleWindow(display, root, x, 0, w, 300, 1, color_get(config_menu_bc), color_get(config_menu_bg));
+		box = XCreateSimpleWindow(display, root, x, 0, w, 300, config_menu_bw, color_get(config_menu_bc), color_get(config_menu_bg));
 		XSelectInput(display, box, ExposureMask);
 		// make it an unmanaged window
 		window_set_atom_prop(box, netatoms[_NET_WM_STATE], &netatoms[_NET_WM_STATE_ABOVE], 1);
