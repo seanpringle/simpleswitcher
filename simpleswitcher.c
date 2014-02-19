@@ -1100,8 +1100,6 @@ int main(int argc, char *argv[])
 
 			free ( name ); free ( class );
 		}
-
-		XFree ( xRMS );
 	}
 
 	find_arg_str(ac, av, "-key",     &config_menu_key       );
