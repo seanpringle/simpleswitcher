@@ -1,4 +1,4 @@
-/* vim:noexpandtab:softtabstop=0: */
+/* vim: set noexpandtab softtabstop=0: */
 /*
 
 MIT/X11 License
