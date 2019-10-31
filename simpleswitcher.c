@@ -1001,7 +1001,7 @@ void grab_key(unsigned int modmask, KeySym key)
 	grab_keycode(modmask, keycode);
 }
 
-void grab_modifier(unsigned int modmask, KeyCode * keycodes)
+void resolve_modifiers(unsigned int modmask, KeyCode * keycodes)
 {
 	int modidx = -1;
 
@@ -1025,7 +1025,6 @@ void grab_modifier(unsigned int modmask, KeyCode * keycodes)
 		int k = 0, offset = modidx * modmapping->max_keypermod;
 		for ( k = 0; k < modmapping->max_keypermod; ++k ) {
 			keycodes[k] = modmapping->modifiermap[offset+k];
-			grab_keycode(0, modmapping->modifiermap[offset+k]);
 		}
 
 		XFreeModifiermap(modmapping);
@@ -1138,9 +1137,10 @@ int main(int argc, char *argv[])
 	parse_key(config_menu_dkey, &desktop_windows_modmask, &desktop_windows_keysym);
 
 	// bind key combos
-	grab_modifier(all_windows_modmask, all_windows_modifiers);
+	resolve_modifiers(all_windows_modmask, all_windows_modifiers);
+	if ( desktop_windows_modmask != all_windows_modmask )
+		resolve_modifiers(desktop_windows_modmask, desktop_windows_modifiers);
 	grab_key(all_windows_modmask, all_windows_keysym);
-	grab_modifier(desktop_windows_modmask, desktop_windows_modifiers);
 	grab_key(desktop_windows_modmask, desktop_windows_keysym);
 
 	XEvent ev;
